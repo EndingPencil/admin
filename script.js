@@ -26,7 +26,7 @@ async function fetchAndRenderIssues() {
     }
     allIssues = data;
     displayAnalytics(allIssues);
-    renderIssues(allIssues); 
+    filterAndRenderIssues(); 
 }
 
 // --- ANALYTICS FUNCTION ---
@@ -43,6 +43,21 @@ function displayAnalytics(issues) {
 }
 // --- END ANALYTICS FUNCTION ---
 
+// --- NEW/UPDATED FILTERING FUNCTION ---
+function filterAndRenderIssues() {
+    const selectedStatus = statusFilter.value;
+    const selectedCategory = categoryFilter.value;
+
+    const filteredIssues = allIssues.filter(issue => {
+        const matchesStatus = selectedStatus === 'all' || issue.status === selectedStatus;
+        const matchesCategory = selectedCategory === 'all' || issue.problem_type === selectedCategory;
+        return matchesStatus && matchesCategory;
+    });
+    
+    renderIssues(filteredIssues);
+}
+// --- END NEW/UPDATED FILTERING FUNCTION ---
+
 function renderIssues(issues) {
     issuesList.innerHTML = '';
     if (issues.length === 0) {
@@ -55,8 +70,13 @@ function renderIssues(issues) {
         issueCard.className = 'issue-card';
         issueCard.setAttribute('data-id', issue.id); 
         
+        // --- CORRECTED: Use the actual media_url from the database ---
+        const imageHtml = issue.media_url ? 
+            `<img src="${issue.media_url}" alt="${issue.problem_type}">` : 
+            `<img src="https://via.placeholder.com/400x200.png?text=No+Image+Available" alt="No image available">`;
+        
         issueCard.innerHTML = `
-            <img src="https://via.placeholder.com/400x200.png?text=Issue+Image" alt="${issue.problem_type}">
+            ${imageHtml}
             <div class="issue-card-content">
                 <h3>${issue.problem_type} on ${issue.location}</h3>
                 <p><strong>Description:</strong> ${issue.description || 'No description provided.'}</p>
@@ -70,14 +90,6 @@ function renderIssues(issues) {
         `;
         issuesList.appendChild(issueCard);
     });
-}
-
-function filterIssues() {
-    const selectedStatus = statusFilter.value;
-    const filteredIssues = allIssues.filter(issue => {
-        return selectedStatus === 'all' || issue.status === selectedStatus;
-    });
-    renderIssues(filteredIssues);
 }
 
 async function updateIssueStatus(issueId, newStatus) {
@@ -107,5 +119,9 @@ issuesList.addEventListener('click', (event) => {
     }
 });
 
-statusFilter.addEventListener('change', filterIssues);
+// --- UPDATED EVENT LISTENERS ---
+statusFilter.addEventListener('change', filterAndRenderIssues);
+categoryFilter.addEventListener('change', filterAndRenderIssues);
+// --- END UPDATED EVENT LISTENERS ---
+
 document.addEventListener('DOMContentLoaded', fetchAndRenderIssues);
